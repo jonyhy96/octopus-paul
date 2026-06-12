@@ -1,0 +1,29 @@
+{
+  "name": "octopus-paul",
+  "version": "0.1.0",
+  "description": "🐙 章鱼竞技场 — 多个大模型同时预测 2026 世界杯比赛并打分排名",
+  "main": "server.js",
+  "bin": {
+    "octopus-paul": "server.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "world-cup",
+    "2026",
+    "llm",
+    "prediction",
+    "arena",
+    "openai-compatible",
+    "nodejs"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jonyhy96/octopus-paul.git"
+  }
+}

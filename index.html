@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>章鱼竞技场 · 2026 世界杯 AI 预测对决</title>
+<style>
+  :root{--bg:#04122b;--bg2:#0a2148;--ink:#eaf2ff;--muted:#9fb3d4;--gold:#ffd75e;--teal:#2ee6c5;--pink:#ff6fae;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.12)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);
+    background:radial-gradient(1200px 600px at 15% -10%,#15407a 0,transparent 55%),radial-gradient(1000px 700px at 110% 10%,#0c2e63 0,transparent 50%),linear-gradient(180deg,var(--bg),var(--bg2));min-height:100vh;overflow-x:hidden}
+  .bubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .bubble{position:absolute;bottom:-60px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.5),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.16);animation:rise linear infinite}
+  @keyframes rise{to{transform:translateY(-115vh) translateX(40px);opacity:0}}
+  header{position:relative;z-index:2;text-align:center;padding:48px 20px 14px}
+  .kicker{display:inline-block;letter-spacing:.32em;font-size:12px;color:var(--teal);border:1px solid var(--line);padding:7px 16px;border-radius:999px;background:var(--card);text-transform:uppercase}
+  h1{font-size:clamp(30px,5.5vw,56px);line-height:1.06;margin:16px 0 8px;background:linear-gradient(90deg,#fff,var(--gold) 55%,var(--teal));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900}
+  .sub{color:var(--muted);max-width:680px;margin:0 auto;font-size:15px;line-height:1.7}
+  .live{margin-top:12px;display:inline-flex;align-items:center;gap:8px;color:var(--gold);font-weight:700;font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 0 rgba(46,230,197,.6);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(46,230,197,.6)}70%{box-shadow:0 0 0 12px rgba(46,230,197,0)}100%{box-shadow:0 0 0 0 rgba(46,230,197,0)}}
+  .wrap{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:14px 16px 80px}
+  .section-title{display:flex;align-items:center;gap:12px;margin:34px 4px 14px}
+  .section-title h2{font-size:20px;font-weight:800}
+  .section-title .bar{height:20px;width:5px;border-radius:6px;background:linear-gradient(var(--gold),var(--pink))}
+  .hint{color:var(--muted);font-size:13px;margin-left:auto}
+  /* step 1 match select */
+  .mselect{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  .mcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;transition:.2s;position:relative}
+  .mcard:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.3)}
+  .mcard.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,215,94,.3) inset}
+  .mtop{display:flex;justify-content:flex-start;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin-bottom:10px;padding-right:72px}
+  .mgrp{color:var(--gold)}
+  .mteams{display:flex;align-items:center;justify-content:space-between}
+  .mt{flex:1;text-align:center}.mf{font-size:30px}.mn{font-size:13px;font-weight:700;margin-top:3px}
+  .mvs{font-size:12px;color:var(--muted);font-weight:800}
+  .badge{position:absolute;top:10px;right:10px;font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700}
+  .b-fin{background:rgba(46,230,197,.15);color:var(--teal);border:1px solid rgba(46,230,197,.35)}
+  .b-up{background:rgba(255,215,94,.12);color:var(--gold);border:1px solid rgba(255,215,94,.3)}
+  .realsc{text-align:center;margin-top:8px;font-size:12px;color:var(--teal);font-weight:700}
+  /* step 2 octo pick */
+  .opick{display:flex;flex-wrap:wrap;gap:10px}
+  .ochip{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 14px;cursor:pointer;transition:.2s;user-select:none}
+  .ochip:hover{border-color:rgba(255,255,255,.3)}
+  .ochip.on{border-color:var(--gold);background:rgba(255,215,94,.08)}
+  .ochip .e{font-size:24px}
+  .ochip .nm{font-weight:700;font-size:13px}.ochip .md{font-size:10px;color:var(--muted);font-family:monospace}
+  .check{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--muted);display:grid;place-items:center;font-size:11px;color:#04122b}
+  .ochip.on .check{background:var(--gold);border-color:var(--gold)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 6px}
+  .btn{font-size:14px;padding:11px 22px;border-radius:13px;border:1px solid var(--teal);background:rgba(46,230,197,.14);color:var(--teal);cursor:pointer;font-weight:800;transition:.2s}
+  .btn:hover{background:rgba(46,230,197,.26)}
+  .btn[disabled]{opacity:.45;cursor:not-allowed}
+  .btn.gold{border-color:var(--gold);background:rgba(255,215,94,.16);color:var(--gold)}
+  /* arena pool */
+  .arena{position:relative;background:linear-gradient(180deg,rgba(20,60,120,.5),rgba(6,25,60,.6));border:1px solid var(--line);border-radius:22px;padding:0;overflow:hidden;min-height:300px;display:none}
+  .arena.show{display:block}
+  .goalbar{display:flex;align-items:stretch;height:62px;border-bottom:1px solid var(--line)}
+  .goal{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;font-size:16px;position:relative}
+  .goal.home{background:linear-gradient(90deg,rgba(54,209,255,.18),transparent)}
+  .goal.draw{flex:0 0 120px;background:rgba(255,255,255,.04);color:var(--muted);font-size:13px;border-left:1px dashed var(--line);border-right:1px dashed var(--line)}
+  .goal.away{background:linear-gradient(270deg,rgba(255,111,174,.18),transparent);justify-content:center}
+  .goal .gf{font-size:30px}
+  .pool{position:relative;height:240px}
+  .swimmer{position:absolute;top:50%;transform:translate(-50%,-50%);text-align:center;transition:left 1.6s cubic-bezier(.34,1.2,.4,1),top 1.6s ease;z-index:3;cursor:pointer}
+  .swimmer:hover .body{filter:drop-shadow(0 0 12px var(--gold))}
+  .swimmer .body{font-size:42px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));animation:bob 3s ease-in-out infinite;display:inline-block}
+  .swimmer .label{margin-top:2px;font-size:11px;font-weight:700;background:rgba(0,0,0,.45);padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .swimmer .pscore{font-size:11px;color:var(--gold);margin-top:2px;font-weight:800}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+  .swimmer.loading .body{animation:spinbob 1s linear infinite}
+  @keyframes spinbob{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+  .swimmer.win .body{animation:celebrate .7s ease infinite}
+  @keyframes celebrate{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-14px) scale(1.18)}}
+  .crown{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:18px}
+  /* results table */
+  .rank{display:none;margin-top:20px}
+  .rank.show{display:block}
+  .rtable{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .rtable th,.rtable td{padding:11px 12px;text-align:left;font-size:13px;border-bottom:1px solid var(--line)}
+  .rtable th{color:var(--muted);font-weight:700;background:rgba(255,255,255,.03)}
+  .rtable tr:last-child td{border-bottom:none}
+  .rtable .sc{font-weight:900;color:var(--gold)}
+  .rtable .em{font-size:20px}
+  .rsn{color:var(--muted);font-style:italic;font-size:12px}
+  .mini{font-size:11px;color:var(--muted)}
+  .err{color:var(--pink);font-size:12px}
+  .status{color:var(--muted);font-size:13px}
+  /* clickable stat row */
+  .crow{cursor:pointer;transition:.15s}
+  .crow:hover{background:rgba(255,215,94,.08)}
+  .crow td:first-child::after{content:" 👆";opacity:.35;font-size:10px}
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(2,8,22,.78);backdrop-filter:blur(6px);z-index:99;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+  .mask.show{display:flex}
+  .modal{background:linear-gradient(180deg,#0b2452,#04122b);border:1px solid var(--line);border-radius:20px;max-width:900px;width:100%;padding:24px;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+  .modal h3{font-size:20px;display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .modal h3 .em{font-size:32px}
+  .modal .sumline{display:flex;flex-wrap:wrap;gap:14px;margin:12px 0 18px;font-size:13px;color:var(--muted)}
+  .modal .sumline b{color:var(--gold);font-size:15px;margin-right:4px}
+  .xbtn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);cursor:pointer;font-size:18px;line-height:1;display:grid;place-items:center}
+  .xbtn:hover{background:rgba(255,111,174,.18);border-color:var(--pink);color:var(--pink)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700}
+  .p-ok{background:rgba(46,230,197,.15);color:var(--teal);border:1px solid rgba(46,230,197,.35)}
+  .p-bad{background:rgba(255,111,174,.12);color:var(--pink);border:1px solid rgba(255,111,174,.32)}
+  .p-wait{background:rgba(255,215,94,.1);color:var(--gold);border:1px solid rgba(255,215,94,.3)}
+  footer{position:relative;z-index:2;text-align:center;color:var(--muted);font-size:12px;padding:24px 20px 50px;line-height:1.8}
+  .disc{max-width:740px;margin:0 auto;opacity:.85}
+  a{color:var(--teal)}
+</style>
+</head>
+<body>
+<div class="bubbles" id="bubbles"></div>
+
+<header>
+  <span class="kicker">🐙 Octopus Arena · 2026</span>
+  <h1>章鱼竞技场</h1>
+  <p class="sub">选一场<strong>真实</strong>的 2026 世界杯比赛，让多只 AI 章鱼同时下注：它们会<strong>游向自己押注的一边</strong>。比赛有真实结果后，自动比对并给章鱼排名，看谁是真·章鱼保罗。</p>
+  <span class="live"><span class="dot"></span> 真实赛程 · 多模型同台 · OpenAI 兼容代理实时调用</span>
+</header>
+
+<div class="wrap">
+  <div class="section-title"><span class="bar"></span><h2>① 选一场比赛</h2><button class="btn" id="refresh" style="margin-left:auto;font-size:12px;padding:6px 14px">🔄 拉取最新赛果</button><span class="hint" id="mhint" style="margin-left:10px">数据：TheSportsDB · FIFA 官方</span></div>
+  <div class="mselect" id="mselect"><div class="status">加载真实赛程中…</div></div>
+
+  <div class="section-title"><span class="bar"></span><h2>② 选参赛章鱼（可多选）</h2><span class="hint">每只背后是不同真实模型</span></div>
+  <div class="opick" id="opick"><div class="status">加载章鱼中…</div></div>
+
+  <div class="toolbar">
+    <button class="btn gold" id="go" disabled>🔮 开始预测对决</button>
+    <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#9fb3d4">
+      🧠 推理模式：
+      <select id="modeSel" style="background:#0b2452;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:700;cursor:pointer">
+        <option value="fast">fast · 快答</option>
+        <option value="deep" selected>deep · 深推</option>
+        <option value="max">max · 顶配</option>
+      </select>
+    </label>
+    <button class="btn" id="clearBtn" style="border-color:var(--pink);background:rgba(255,111,174,.12);color:var(--pink)">🗑 清空所有预测</button>
+    <span class="status" id="status">先选比赛和至少一只章鱼</span>
+  </div>
+
+  <div class="arena" id="arena">
+    <div class="goalbar">
+      <div class="goal home" id="goalHome"><span class="gf" id="ghf">🏠</span><span id="ghn">主队</span></div>
+      <div class="goal draw" id="goalDraw">平局区</div>
+      <div class="goal away" id="goalAway"><span id="gan">客队</span><span class="gf" id="gaf">✈️</span></div>
+    </div>
+    <div class="pool" id="pool"></div>
+  </div>
+
+  <div class="rank" id="rank">
+    <div class="section-title"><span class="bar"></span><h2>③ 章鱼排行榜</h2><span class="hint" id="rankhint"></span></div>
+    <table class="rtable"><thead><tr><th>名次</th><th>章鱼</th><th>预测比分</th><th>预测胜者</th><th>得分</th><th>神谕</th></tr></thead>
+    <tbody id="rbody"></tbody></table>
+    <p class="mini" id="scorerule" style="margin-top:10px"></p>
+  </div>
+
+  <div class="section-title"><span class="bar"></span><h2>④ 章鱼累计战绩榜</h2><span class="hint">跨所有比赛累计 · 自动存档</span></div>
+  <table class="rtable"><thead><tr><th>名次</th><th>章鱼</th><th>预测场次</th><th>已评分</th><th>累计得分</th><th>平均分</th><th>胜负命中率</th><th>精确比分次数</th></tr></thead>
+  <tbody id="sbody"><tr><td colspan="8" class="status">暂无记录,跑一场预测后这里就有战绩了</td></tr></tbody></table>
+
+  <div class="section-title"><span class="bar"></span><h2>⑤ 历史预测明细</h2><span class="hint">每只章鱼每场的预测留痕(最新在前)</span></div>
+  <table class="rtable"><thead><tr><th>时间</th><th>比赛</th><th>章鱼</th><th>预测比分</th><th>胜者</th><th>真实</th><th>得分</th><th>神谕</th></tr></thead>
+  <tbody id="hbody"><tr><td colspan="8" class="status">暂无历史</td></tr></tbody></table>
+</div>
+
+<footer>
+  <p class="disc">🐙 娱乐演示。比赛赛程为真实数据；章鱼预测由 AI 大模型实时生成，仅供趣味参考，不构成任何结果或投注建议。揭幕战墨西哥2-0南非为 FIFA 官方已完赛结果。</p>
+</footer>
+
+<!-- 章鱼个人战绩弹窗 -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <button class="xbtn" id="xbtn">×</button>
+    <h3 id="mTitle"><span class="em">🐙</span><span id="mName">章鱼</span><span class="mini" id="mModel"></span></h3>
+    <div class="sumline" id="mSum"></div>
+    <table class="rtable"><thead><tr><th>时间</th><th>比赛</th><th>预测比分</th><th>预测胜者</th><th>真实结果</th><th>得分</th><th>神谕</th></tr></thead>
+    <tbody id="mBody"><tr><td colspan="7" class="status">加载中…</td></tr></tbody></table>
+  </div>
+</div>
+
+<script>
+let OCTOPI=[], MATCHES=[], selMatch=null, selOctos=new Set();
+const E=id=>document.getElementById(id);
+
+function updateSyncHint(s){
+  if(!s||!s.lastTs){ E("mhint").textContent="数据：TheSportsDB · 尚未同步"; return; }
+  const t=new Date(s.lastTs);
+  const ts=`${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")}`;
+  const tag=s.lastOk?"✅":"⚠️";
+  E("mhint").textContent=`${tag} 上次同步 ${ts} · ${s.msg||""}`;
+}
+async function doRefresh(){
+  const btn=E("refresh"); btn.disabled=true; const old=btn.textContent; btn.textContent="拉取中…";
+  try{
+    const r=await fetch("/api/refresh").then(x=>x.json());
+    updateSyncHint(r.sync);
+    // 重新拉 matches/stats/history,带出可能更新的真实比分与重打分
+    const m=await fetch("/api/matches").then(x=>x.json());
+    MATCHES=m.matches; renderMatches(); loadStats(); loadHistory();
+  }catch(e){ E("mhint").innerHTML='<span class="err">拉取失败:'+e+'</span>'; }
+  btn.disabled=false; btn.textContent=old;
+}
+E("refresh").onclick=doRefresh;
+
+async function init(){
+  try{
+    const [o,m]=await Promise.all([fetch("/api/octopi").then(r=>r.json()),fetch("/api/matches").then(r=>r.json())]);
+    OCTOPI=o.octopi; MATCHES=m.matches;
+    updateSyncHint(m.sync);
+    renderMatches(); renderOctos();
+  }catch(e){ E("mselect").innerHTML='<div class="err">加载失败：'+e+'</div>'; }
+}
+function renderMatches(){
+  E("mselect").innerHTML=MATCHES.map(m=>`
+    <div class="mcard ${selMatch===m.id?'sel':''}" data-id="${m.id}">
+      <span class="badge ${m.finished?'b-fin':'b-up'}">${m.finished?'已完赛':'未开赛'}</span>
+      <div class="mtop"><span class="mgrp">${m.group}</span><span>${m.date}</span></div>
+      <div class="mteams">
+        <div class="mt"><div class="mf">${m.home.f}</div><div class="mn">${m.home.n}</div></div>
+        <span class="mvs">VS</span>
+        <div class="mt"><div class="mf">${m.away.f}</div><div class="mn">${m.away.n}</div></div>
+      </div>
+      ${m.finished?`<div class="realsc">真实比分 ${m.home.n} ${m.result.gh} : ${m.result.ga} ${m.away.n}</div>`:''}
+    </div>`).join("");
+  document.querySelectorAll(".mcard").forEach(c=>c.onclick=()=>{selMatch=c.dataset.id;renderMatches();updateGo();});
+}
+function renderOctos(){
+  E("opick").innerHTML=OCTOPI.map(o=>`
+    <div class="ochip ${selOctos.has(o.id)?'on':''}" data-id="${o.id}">
+      <span class="check">✓</span><span class="e">${o.emoji}</span>
+      <span><div class="nm">${o.name}</div><div class="md">${o.model}</div></span>
+    </div>`).join("");
+  document.querySelectorAll(".ochip").forEach(c=>c.onclick=()=>{
+    const id=c.dataset.id; selOctos.has(id)?selOctos.delete(id):selOctos.add(id); renderOctos(); updateGo();
+  });
+}
+function updateGo(){
+  const ok=selMatch&&selOctos.size>0;
+  E("go").disabled=!ok;
+  E("status").textContent=ok?`已选「${MATCHES.find(x=>x.id===selMatch).group}」+ ${selOctos.size} 只章鱼，可开始`:"先选比赛和至少一只章鱼";
+}
+
+// 章鱼初始位置：池中央散开
+function layoutStart(ids,m){
+  const pool=E("pool"); pool.innerHTML="";
+  const n=ids.length;
+  ids.forEach((id,i)=>{
+    const o=OCTOPI.find(x=>x.id===id);
+    const left=15+ (70*(n===1?0.5:i/(n-1)));
+    const div=document.createElement("div");
+    div.className="swimmer loading"; div.id="sw-"+id;
+    div.style.left=left+"%"; div.style.top=(38+ (i%2)*24)+"%";
+    div.innerHTML=`<span class="body">${o.emoji}</span><div class="label">${o.name}</div><div class="pscore" id="ps-"+id></div>`;
+    pool.appendChild(div);
+  });
+}
+// 预测出来后，章鱼游向押注的一边
+function swimTo(id,pred){
+  const sw=E("sw-"+id); if(!sw) return;
+  sw.classList.remove("loading");
+  let left, side;
+  if(pred.winner_side==="home"){ left=8+Math.random()*18; side="home"; }
+  else if(pred.winner_side==="away"){ left=74+Math.random()*18; side="away"; }
+  else { left=42+Math.random()*16; side="draw"; }
+  sw.style.left=left+"%";
+  sw.style.top=(28+Math.random()*40)+"%";
+  const ps=sw.querySelector(".pscore");
+  ps.textContent=`${pred.gh}:${pred.ga}`;
+}
+
+async function run(){
+  E("go").disabled=true; E("rank").classList.remove("show");
+  const m=MATCHES.find(x=>x.id===selMatch);
+  const ids=[...selOctos];
+  // 布置场地
+  E("ghn").textContent=m.home.n; E("ghf").textContent=m.home.f;
+  E("gan").textContent=m.away.n; E("gaf").textContent=m.away.f;
+  E("arena").classList.add("show");
+  layoutStart(ids,m);
+  E("status").textContent="章鱼们正在缸里冥想…实时调用模型中（深度推理可能稍慢）";
+  try{
+    const mode=(E("modeSel")&&E("modeSel").value)||"deep";
+    const r=await fetch("/api/arena",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({matchId:selMatch,octos:ids,mode})}).then(x=>x.json());
+    if(!r.ok){ E("status").innerHTML='<span class="err">对决失败：'+r.error+'</span>'; E("go").disabled=false; return; }
+    // 逐只游动（带节奏感）
+    for(const res of r.results){
+      if(res.ok){
+        const p=res.prediction;
+        const side = p.winner===m.home.n?"home":(p.winner===m.away.n?"away":"draw");
+        swimTo(res.octoId,{...p,winner_side:side});
+      } else {
+        const sw=E("sw-"+res.octoId); if(sw){sw.classList.remove("loading"); sw.querySelector(".pscore").innerHTML='<span class="err">失败</span>';}
+      }
+      await new Promise(z=>setTimeout(z,700));
+    }
+    renderRank(r,m);
+    E("status").textContent=m.finished?"✅ 已完赛，已按真实结果给章鱼打分":"⏳ 该场未开赛，仅展示各章鱼下注（开赛后可重跑评分）";
+    loadStats(); loadHistory();
+  }catch(e){ E("status").innerHTML='<span class="err">'+e+'</span>'; }
+  E("go").disabled=false;
+}
+
+async function loadStats(){
+  try{
+    const r=await fetch("/api/stats").then(x=>x.json());
+    const list=r.stats||[];
+    if(!list.length){ E("sbody").innerHTML='<tr><td colspan="8" class="status">暂无记录,跑一场预测后这里就有战绩了</td></tr>'; return; }
+    E("sbody").innerHTML=list.map((s,i)=>{
+      const o=OCTOPI.find(x=>x.id===s.octoId);
+      const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":(i+1);
+      return `<tr class="crow" data-oid="${s.octoId}" title="点击查看 ${s.octo} 的全部预测">
+        <td>${medal}</td>
+        <td><span class="em">${o?o.emoji:"🐙"}</span> ${s.octo}<div class="mini">${s.model}</div></td>
+        <td>${s.total}</td><td>${s.scored}</td>
+        <td><span class="sc">${s.sumScore}</span></td>
+        <td>${s.avgScore}</td>
+        <td>${s.dirRate}%</td>
+        <td>${s.exactHit}</td>
+      </tr>`;
+    }).join("");
+    document.querySelectorAll("#sbody .crow").forEach(tr=>tr.onclick=()=>openOctoModal(tr.dataset.oid));
+  }catch(e){}
+}
+async function loadHistory(){
+  try{
+    const r=await fetch("/api/history").then(x=>x.json());
+    const recs=r.records||[];
+    if(!recs.length){ E("hbody").innerHTML='<tr><td colspan="8" class="status">暂无历史</td></tr>'; return; }
+    E("hbody").innerHTML=recs.slice(0,60).map(x=>{
+      const o=OCTOPI.find(y=>y.id===x.octoId);
+      const t=new Date(x.ts); const ts=`${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")}`;
+      const real=x.finished?`${x.result.gh}:${x.result.ga}`:'<span class="mini">未开赛</span>';
+      const sc=x.finished&&x.scoring?`<span class="sc">${x.scoring.score}</span>`:'<span class="mini">—</span>';
+      return `<tr>
+        <td class="mini">${ts}</td>
+        <td>${x.group} ${x.home}vs${x.away}</td>
+        <td><span class="em">${o?o.emoji:"🐙"}</span> ${x.octo}</td>
+        <td>${x.prediction.gh}:${x.prediction.ga}</td>
+        <td>${x.prediction.winner}</td>
+        <td>${real}</td>
+        <td>${sc}</td>
+        <td class="rsn">"${x.prediction.reason||''}"</td>
+      </tr>`;
+    }).join("");
+  }catch(e){}
+}
+
+function renderRank(r,m){
+  E("rank").classList.add("show");
+  const finished=m.finished;
+  E("rankhint").textContent=finished?`真实结果 ${m.home.n} ${m.result.gh}:${m.result.ga} ${m.away.n}`:"未开赛 · 暂无评分";
+  let rows=r.results.filter(x=>x.ok);
+  if(finished) rows.sort((a,b)=>(b.scoring?.score||0)-(a.scoring?.score||0));
+  E("rbody").innerHTML=rows.map((res,i)=>{
+    const o=OCTOPI.find(x=>x.id===res.octoId), p=res.prediction;
+    const medal= finished ? (i===0?"🥇":i===1?"🥈":i===2?"🥉":(i+1)) : "—";
+    const sc= finished ? `<span class="sc">${res.scoring.score}</span> 分` : '<span class="mini">待开赛</span>';
+    // 给冠军章鱼加皇冠
+    if(finished&&i===0){ const sw=E("sw-"+res.octoId); if(sw&&!sw.querySelector(".crown")){ sw.classList.add("win"); const c=document.createElement("div"); c.className="crown"; c.textContent="👑"; sw.appendChild(c);} }
+    return `<tr>
+      <td>${medal}</td>
+      <td><span class="em">${o.emoji}</span> ${o.name}<div class="mini">${o.model}</div></td>
+      <td>${m.home.n} ${p.gh}:${p.ga} ${m.away.n}</td>
+      <td>${p.winner}</td>
+      <td>${sc}</td>
+      <td class="rsn">"${p.reason||''}"${p.think?`<div class="mini" style="margin-top:4px;color:#9fb3d4;font-style:normal;line-height:1.5">🧠 ${p.think}</div>`:''}</td>
+    </tr>`;
+  }).join("") + r.results.filter(x=>!x.ok).map(res=>{
+    const o=OCTOPI.find(x=>x.id===res.octoId);
+    return `<tr><td>—</td><td><span class="em">${o.emoji}</span> ${o.name}</td><td colspan="4" class="err">预测失败：${res.error}</td></tr>`;
+  }).join("");
+  E("scorerule").textContent=finished?"评分规则：胜负方向命中 +50；精确比分命中 +40；净胜球差命中 +10（满分100）。":"";
+}
+
+E("go").onclick=run;
+
+// ===== 章鱼个人战绩弹窗 =====
+async function openOctoModal(oid){
+  const o=OCTOPI.find(x=>x.id===oid); if(!o) return;
+  E("mTitle").querySelector(".em").textContent=o.emoji;
+  E("mName").textContent=o.name;
+  E("mModel").textContent=" · "+o.model+" · "+o.mood;
+  E("mSum").innerHTML='<span class="status">加载中…</span>';
+  E("mBody").innerHTML='<tr><td colspan="7" class="status">加载中…</td></tr>';
+  E("mask").classList.add("show"); document.body.style.overflow="hidden";
+  try{
+    const [hr,sr]=await Promise.all([
+      fetch("/api/history?octoId="+encodeURIComponent(oid)).then(x=>x.json()),
+      fetch("/api/stats").then(x=>x.json())
+    ]);
+    const recs=hr.records||[];
+    const s=(sr.stats||[]).find(x=>x.octoId===oid)||{total:0,scored:0,sumScore:0,avgScore:0,dirRate:0,exactHit:0};
+    E("mSum").innerHTML=
+      `<span><b>${s.total}</b>预测场次</span>`+
+      `<span><b>${s.scored}</b>已评分</span>`+
+      `<span><b>${s.sumScore}</b>累计得分</span>`+
+      `<span><b>${s.avgScore}</b>平均分</span>`+
+      `<span><b>${s.dirRate}%</b>胜负命中率</span>`+
+      `<span><b>${s.exactHit}</b>精确比分次数</span>`;
+    if(!recs.length){ E("mBody").innerHTML='<tr><td colspan="7" class="status">这只章鱼还没有预测记录</td></tr>'; return; }
+    E("mBody").innerHTML=recs.map(x=>{
+      const t=new Date(x.ts);
+      const ts=`${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")}`;
+      const real=x.finished?`${x.result.gh}:${x.result.ga}`:'<span class="pill p-wait">未开赛</span>';
+      let sc='<span class="mini">—</span>';
+      if(x.finished&&x.scoring){
+        const cls=x.scoring.score>=50?"p-ok":"p-bad";
+        sc=`<span class="pill ${cls}">${x.scoring.score} 分</span>`;
+      }
+      return `<tr>
+        <td class="mini">${ts}</td>
+        <td>${x.group} ${x.home} vs ${x.away}</td>
+        <td>${x.prediction.gh}:${x.prediction.ga}</td>
+        <td>${x.prediction.winner}</td>
+        <td>${real}</td>
+        <td>${sc}</td>
+        <td class="rsn">"${x.prediction.reason||''}"</td>
+      </tr>`;
+    }).join("");
+  }catch(e){ E("mBody").innerHTML='<tr><td colspan="7" class="err">加载失败：'+e+'</td></tr>'; }
+}
+function closeModal(){ E("mask").classList.remove("show"); document.body.style.overflow=""; }
+E("xbtn").onclick=closeModal;
+E("mask").addEventListener("click",e=>{ if(e.target.id==="mask") closeModal(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
+// 池子里直接点章鱼也能打开
+document.addEventListener("click",e=>{
+  const sw=e.target.closest(".swimmer"); if(!sw||!sw.id) return;
+  const oid=sw.id.replace(/^sw-/,""); if(oid) openOctoModal(oid);
+});
+(function(){const b=E("bubbles");let h="";for(let i=0;i<24;i++){const s=6+Math.random()*24,l=Math.random()*100,d=6+Math.random()*12,dl=Math.random()*10;h+=`<span class="bubble" style="left:${l}%;width:${s}px;height:${s}px;animation-duration:${d}s;animation-delay:-${dl}s"></span>`}b.innerHTML=h;})();
+E("clearBtn").onclick=async()=>{
+  if(!confirm("确认清空所有历史预测记录？此操作不可撤销。")) return;
+  const btn=E("clearBtn"); btn.disabled=true; const old=btn.textContent; btn.textContent="清理中…";
+  try{
+    const r=await fetch("/api/clear_history",{method:"POST"}).then(x=>x.json());
+    if(r.ok){ btn.textContent="✅ 已清空"; loadStats(); loadHistory(); }
+    else{ btn.textContent="❌ 失败"; alert("清空失败："+(r.error||"unknown")); }
+  }catch(e){ btn.textContent="❌ 失败"; alert("网络错误："+e); }
+  setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1500);
+};
+init(); loadStats(); loadHistory();
+</script>
+</body>
+</html>
